@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>2-2 · Network Security Design</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#070B1A;--bg2:#0C1230;--panel:#111A3B;--panel2:#18234C;--line:#26346B;--ink:#EEF2FF;--dim:#9DAAD6;
+--a:#6C7CFF;--b:#22D3EE;--ok:#34D399;--warn:#FBBF24;--bad:#FB7185;--vio:#A78BFA;--glow:rgba(108,124,255,.16);--r:18px;
+--grad:linear-gradient(120deg,#6C7CFF,#22D3EE);box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#F3F5FF;--bg2:#E8ECFF;--panel:#fff;--panel2:#EEF1FF;--line:#D6DDF5;--ink:#0E1535;--dim:#55618F;--glow:rgba(108,124,255,.12)}}
+:root[data-theme="light"]{--bg:#F3F5FF;--bg2:#E8ECFF;--panel:#fff;--panel2:#EEF1FF;--line:#D6DDF5;--ink:#0E1535;--dim:#55618F;--glow:rgba(108,124,255,.12)}
+*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.7 Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{font-family:Sora,Inter,sans-serif;margin:0;line-height:1.25}
+.wrap{max-width:960px;margin:0 auto;padding:0 20px}
+#bar{position:fixed;top:0;left:0;height:4px;width:0;background:var(--grad);z-index:50}
+/* gate */
+#gate{position:fixed;inset:0;z-index:99;display:flex;align-items:center;justify-content:center;padding:24px;
+background:radial-gradient(700px 420px at 15% 10%,rgba(108,124,255,.35),transparent 60%),radial-gradient(700px 500px at 90% 95%,rgba(34,211,238,.25),transparent 60%),var(--bg)}
+.gc{width:100%;max-width:410px;background:var(--panel);border:1px solid var(--line);border-radius:26px;overflow:hidden;text-align:center;box-shadow:0 40px 90px rgba(0,0,0,.4)}
+.gs{padding:28px 28px 20px;background:linear-gradient(135deg,rgba(108,124,255,.22),rgba(34,211,238,.14));border-bottom:1px solid var(--line)}
+.av{width:68px;height:68px;margin:0 auto 12px;border-radius:22px;background:var(--grad);display:grid;place-items:center;font:800 22px Sora;color:#fff;transform:rotate(-6deg);box-shadow:0 10px 30px rgba(108,124,255,.5)}
+.gs small{color:var(--dim);letter-spacing:2px;font-size:11px}.gs b{display:block;font:700 18px Sora}
+.gb{padding:26px 30px 32px}.gb h2{font-size:21px}.gb p{color:var(--dim);font-size:14px;margin:6px 0 18px}
+#gi{width:100%;padding:14px;border-radius:12px;border:1.5px solid var(--line);background:var(--panel2);color:var(--ink);font-size:20px;letter-spacing:6px;text-align:center;outline:none}
+#gi:focus{border-color:var(--a);box-shadow:0 0 0 4px var(--glow)}
+.btn{border:0;border-radius:12px;padding:13px 20px;font:700 15px Inter;cursor:pointer;color:#fff;background:var(--grad);transition:.2s}
+.btn:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(108,124,255,.4)}.btn:disabled{opacity:.4;pointer-events:none}
+.btn.ghost{background:var(--panel2);color:var(--ink);border:1px solid var(--line)}
+#gb2{width:100%;margin-top:12px}#ge{min-height:20px;margin-top:10px;color:var(--bad);font-size:13px;font-weight:600}
+.shake{animation:sh .4s}@keyframes sh{25%{transform:translateX(6px)}50%{transform:translateX(-8px)}75%{transform:translateX(4px)}}
+#app{display:none}
+/* hero */
+.hero{padding:70px 0 54px;position:relative;overflow:hidden;background:radial-gradient(800px 420px at 85% -10%,rgba(108,124,255,.3),transparent 65%),radial-gradient(600px 360px at 0% 100%,rgba(34,211,238,.16),transparent 65%)}
+.hero:after{content:"";position:absolute;inset:0;background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:44px 44px;opacity:.25;mask-image:linear-gradient(#000,transparent 85%);-webkit-mask-image:linear-gradient(#000,transparent 85%);pointer-events:none}
+.hero .wrap{position:relative;z-index:1}
+.pill{display:inline-flex;gap:8px;align-items:center;padding:6px 14px;border-radius:99px;border:1px solid var(--line);background:var(--panel);font-size:12px;letter-spacing:1.2px;text-transform:uppercase;color:var(--b);font-weight:600}
+.pill i{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 10px var(--ok)}
+.hero h1{font-size:clamp(34px,7vw,60px);letter-spacing:-1.5px;margin:18px 0 12px}
+.grad{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero .sub{color:var(--dim);font-size:17px;max-width:640px}
+.meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:24px}
+.meta span{padding:8px 14px;border-radius:12px;background:var(--panel);border:1px solid var(--line);font-size:13px;color:var(--dim)}.meta b{color:var(--ink)}
+/* sections */
+section{padding:56px 0}
+.sh{display:flex;align-items:center;gap:14px;margin-bottom:10px}
+.n{width:40px;height:40px;border-radius:13px;background:var(--grad);display:grid;place-items:center;font:800 14px Sora;color:#fff;flex:none}
+.sh h2{font-size:clamp(21px,4vw,28px)}.lead{color:var(--dim);margin:0 0 24px;max-width:720px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:22px}
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+.obj{display:flex;gap:14px;padding:14px 0;border-bottom:1px dashed var(--line)}.obj:last-child{border:0}
+.obj i{font-style:normal;width:30px;height:30px;border-radius:50%;flex:none;display:grid;place-items:center;background:var(--glow);color:var(--a);font-weight:700}
+.chips{display:flex;flex-wrap:wrap;gap:9px;margin-top:18px}
+.chip{padding:8px 15px;border-radius:99px;font-size:13px;font-weight:600;border:1px solid var(--line);background:var(--panel);color:var(--dim)}
+.chip:nth-child(3n+1){color:var(--a)}.chip:nth-child(3n+2){color:var(--b)}.chip:nth-child(3n){color:var(--vio)}
+.big{padding:26px;border-radius:22px;background:linear-gradient(135deg,#4F46E5,#0891B2);color:#fff;box-shadow:0 20px 50px rgba(79,70,229,.35)}
+.big small{letter-spacing:2px;font-weight:700;opacity:.8;font-size:12px}.big h3{font-size:22px;margin:6px 0 14px}.big p{margin:0;opacity:.95}
+/* diagram */
+.dia{background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:14px;overflow-x:auto}
+.dia svg{min-width:640px;width:100%;height:auto;display:block}
+.dash{stroke-dasharray:7 7;animation:fl 1s linear infinite}@keyframes fl{to{stroke-dashoffset:-14}}
+.cap{font-size:13px;color:var(--dim);text-align:center;margin-top:10px}
+/* tabs */
+.tabs{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 16px}
+.tab{padding:10px 16px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--dim);font:600 14px Inter;cursor:pointer;transition:.2s}
+.tab:hover{color:var(--ink)}.tab.on{background:var(--grad);border-color:transparent;color:#fff;box-shadow:0 8px 22px rgba(108,124,255,.4)}
+.row{display:flex;gap:16px;padding:14px 0;border-bottom:1px dashed var(--line)}.row:last-child{border:0}
+.row .k{min-width:96px;font-weight:700;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:var(--b);padding-top:3px}.row .v{color:var(--dim)}
+.pane h3{font-size:22px;margin-bottom:4px}.pane .ic{font-size:30px}
+.fade{animation:fd .35s}@keyframes fd{from{opacity:0;transform:translateY(8px)}}
+/* simulator */
+.sim{display:grid;gap:18px;grid-template-columns:1.1fr .9fr}@media(max-width:720px){.sim{grid-template-columns:1fr}}
+.tg{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;background:var(--panel2);border:1px solid var(--line);margin-bottom:10px;cursor:pointer;transition:.2s;user-select:none}
+.tg.on{border-color:var(--ok);background:rgba(52,211,153,.1)}.tg.hit{border-color:var(--bad);background:rgba(251,113,133,.14)}
+.sw{width:42px;height:24px;border-radius:99px;background:var(--line);position:relative;flex:none;transition:.2s}.sw:after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.2s}
+.tg.on .sw{background:var(--ok)}.tg.on .sw:after{left:21px}.tg b{font-size:14.5px}.tg small{display:block;color:var(--dim);font-size:12px;line-height:1.4}
+.meter{height:14px;border-radius:99px;background:var(--panel2);border:1px solid var(--line);overflow:hidden;margin:10px 0}.meter div{height:100%;width:100%;border-radius:99px;transition:.5s}
+.score{font:800 46px Sora}.out{margin-top:14px;padding:14px;border-radius:14px;background:var(--panel2);border-left:4px solid var(--warn);font-size:14.5px;color:var(--dim);min-height:70px}
+/* mcq */
+.mq{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:20px;margin-bottom:14px}
+.mq .t{font-weight:600;margin-bottom:14px}.mq .tag{font:700 11px Inter;letter-spacing:1.4px;color:var(--vio);text-transform:uppercase;margin-bottom:6px}
+.os{display:grid;gap:9px}.o{display:flex;gap:12px;align-items:center;padding:12px 14px;border-radius:12px;border:1.5px solid var(--line);background:var(--panel2);cursor:pointer;font-size:15px;transition:.15s;text-align:left;color:var(--ink);font-family:inherit;width:100%}
+.o:hover{border-color:var(--a);transform:translateX(3px)}.o u{text-decoration:none;width:26px;height:26px;border-radius:8px;background:var(--panel);display:grid;place-items:center;font:700 12px Sora;color:var(--dim);flex:none}
+.o.ok{border-color:var(--ok);background:rgba(52,211,153,.14)}.o.ok u{background:var(--ok);color:#042;}.o.no{border-color:var(--bad);background:rgba(251,113,133,.14)}.o.no u{background:var(--bad);color:#fff}
+.fb{display:none;margin-top:14px;padding:13px 15px;border-radius:12px;background:var(--panel2);border-left:4px solid var(--warn);font-size:14px;color:var(--dim)}.fb.show{display:block;animation:fd .3s}
+.two{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+.gl{border:1px solid var(--line);border-radius:var(--r);overflow:hidden}.gi{border-bottom:1px solid var(--line);background:var(--panel)}.gi:last-child{border:0}
+.gh{padding:16px 20px;display:flex;justify-content:space-between;cursor:pointer;font-weight:600}.gh span{color:var(--a);font-size:20px}.gbd{display:none;padding:0 20px 16px;color:var(--dim);font-size:14.5px}.gi.open .gbd{display:block}
+.sum li{margin-bottom:10px}.sum{margin:0;padding-left:20px}
+/* quiz */
+.qtop{display:flex;justify-content:space-between;color:var(--dim);font-size:13.5px;font-weight:600;margin-bottom:8px}
+.pg{height:8px;border-radius:99px;background:var(--panel2);margin-bottom:16px;overflow:hidden}.pg div{height:100%;width:0;background:var(--grad);transition:.4s}
+.qn{display:flex;gap:10px;margin-top:16px}.qn .btn{flex:1}
+#res{display:none;text-align:center;padding:36px 20px}#res .score{font-size:64px}
+footer{padding:44px 0 70px;text-align:center;color:var(--dim);font-size:13.5px;border-top:1px solid var(--line)}footer b{color:var(--ink)}
+</style>
+</head>
+<body>
+<div id="bar"></div>
+<div id="gate"><div class="gc"><div class="gs"><div class="av">AT</div><small>PREPARED BY</small><b>Mr. Ahmed Tamer · م/ أحمد تامر</b></div>
+<div class="gb"><h2>Lesson 2-2</h2><p>Network Security Design — enter the class password to start.</p>
+<input id="gi" type="tel" inputmode="numeric" maxlength="6" placeholder="••••••" autocomplete="off"><button class="btn" id="gb2">Unlock Lesson</button><div id="ge"></div></div></div></div>
+
+<div id="app">
+<header class="hero"><div class="wrap">
+<span class="pill"><i></i>Unit 2 · Cyber Security</span>
+<h1>Lesson 2-2<br><span class="grad">Network Security Design</span></h1>
+<p class="sub">One lock is never enough. Learn how firewalls, VPNs, DMZs and endpoint protection work together so a network stays safe even when one defense fails.</p>
+<div class="meta"><span>Programming &amp; AI</span><span>Second Secondary · Term 1 · 2026/2027</span><span><b>Mr. Ahmed Tamer</b> · 01026309600</span></div>
+</div></header>
+
+<section><div class="wrap">
+<div class="sh"><div class="n">01</div><h2>Learning Objectives</h2></div>
+<p class="lead">After this lesson you will be able to:</p>
+<div class="card">
+<div class="obj"><i>1</i><div><b>Describe</b> the roles of firewalls, VPNs, DMZs and endpoint protection in securing a network.</div></div>
+<div class="obj"><i>2</i><div><b>Explain</b> why Defense in Depth gives stronger protection than relying on a single measure.</div></div>
+<div class="obj"><i>3</i><div><b>Evaluate</b> a network design and justify the controls chosen based on its assets and threats.</div></div></div>
+<div class="chips"><span class="chip">Firewall</span><span class="chip">VPN</span><span class="chip">DMZ</span><span class="chip">Endpoint Protection</span><span class="chip">Zero Trust</span><span class="chip">Defense in Depth</span></div>
+</div></section>
+
+<section><div class="wrap">
+<div class="sh"><div class="n">02</div><h2>The Big Question</h2></div>
+<p class="lead">In Lesson 2-1 you learned how encryption and authentication protect communication and accounts. Now we protect the network itself: organizations store important data and services, and attackers try to reach them. A single protection that fails can expose everything.</p>
+<div class="big"><small>MAIN QUESTION</small><h3>How can an organization design its network so it stays protected even if one defense is breached?</h3>
+<p><b>Key idea:</b> The strongest network security comes from <b>layering</b> controls — <i>Defense in Depth</i>.</p></div>
+</div></section>
+
+<section><div class="wrap">
+<div class="sh"><div class="n">03</div><h2>A Defended Network at a Glance</h2></div>
+<p class="lead">Follow the traffic: remote staff use an encrypted VPN tunnel, public visitors reach only the DMZ, and the internal network stays behind a second firewall.</p>
+<div class="dia"><svg viewBox="0 0 760 310" font-family="Inter,sans-serif" font-size="12">
+<rect x="20" y="28" width="110" height="64" rx="14" fill="var(--panel2)" stroke="var(--line)"/><text x="75" y="56" text-anchor="middle" fill="var(--ink)" font-weight="700">Remote</text><text x="75" y="74" text-anchor="middle" fill="var(--dim)">employee</text>
+<ellipse cx="75" cy="205" rx="60" ry="42" fill="var(--panel2)" stroke="var(--line)"/><text x="75" y="203" text-anchor="middle" fill="var(--ink)" font-weight="700">Internet</text><text x="75" y="220" text-anchor="middle" fill="var(--dim)">untrusted</text>
+<rect x="190" y="150" width="30" height="110" rx="6" fill="var(--bad)"/><text x="205" y="278" text-anchor="middle" fill="var(--bad)" font-weight="700">Firewall</text>
+<rect x="250" y="130" width="190" height="150" rx="18" fill="rgba(251,191,36,.1)" stroke="var(--warn)" stroke-dasharray="6 5"/><text x="345" y="152" text-anchor="middle" fill="var(--warn)" font-weight="700">DMZ</text>
+<rect x="290" y="175" width="110" height="60" rx="12" fill="var(--panel2)" stroke="var(--warn)"/><text x="345" y="202" text-anchor="middle" fill="var(--ink)" font-weight="700">Web server</text><text x="345" y="219" text-anchor="middle" fill="var(--dim)">public service</text>
+<rect x="470" y="150" width="30" height="110" rx="6" fill="var(--bad)"/><text x="485" y="278" text-anchor="middle" fill="var(--bad)" font-weight="700">Firewall 2</text>
+<rect x="530" y="28" width="210" height="252" rx="20" fill="rgba(52,211,153,.08)" stroke="var(--ok)"/><text x="635" y="52" text-anchor="middle" fill="var(--ok)" font-weight="700">Internal network</text>
+<rect x="560" y="75" width="150" height="60" rx="12" fill="var(--panel2)" stroke="var(--ok)"/><text x="635" y="102" text-anchor="middle" fill="var(--ink)" font-weight="700">Database</text><text x="635" y="119" text-anchor="middle" fill="var(--dim)">student data</text>
+<rect x="560" y="170" width="68" height="60" rx="12" fill="var(--panel2)" stroke="var(--a)"/><text x="594" y="198" text-anchor="middle" fill="var(--ink)" font-weight="700">Laptop</text><text x="594" y="215" text-anchor="middle" fill="var(--a)" font-size="10">endpoint</text>
+<rect x="642" y="170" width="68" height="60" rx="12" fill="var(--panel2)" stroke="var(--a)"/><text x="676" y="198" text-anchor="middle" fill="var(--ink)" font-weight="700">Phone</text><text x="676" y="215" text-anchor="middle" fill="var(--a)" font-size="10">endpoint</text>
+<path class="dash" d="M75 92 V120 H350 V130 M75 92 V110 H560 V104" fill="none" stroke="var(--b)" stroke-width="3"/><text x="300" y="104" fill="var(--b)" font-weight="700">VPN encrypted tunnel</text>
+<path d="M130 205 H190 M220 205 H290 M400 205 H470 M500 205 H530" stroke="var(--dim)" stroke-width="2.5" fill="none" stroke-dasharray="3 4"/>
+</svg></div>
+<p class="cap">Zero Trust applies everywhere: every access is verified, whether it comes from outside or inside.</p>
+</div></section>
+
+<section><div class="wrap">
+<div class="sh"><div class="n">04</div><h2>The Six Building Blocks</h2></div>
+<p class="lead">Tap a concept to see what it is, where it sits and a real example.</p>
+<div class="tabs" id="tabs"></div><div class="card pane" id="pane"></div>
+</div></section>
+
+<section><div class="wrap">
+<div class="sh"><div class="n">05</div><h2>Lab — Defense in Depth Simulator</h2></div>
+<p class="lead">Switch layers on or off, then launch an attack that breaks through one random layer. Does the network survive?</p>
+<div class="sim"><div id="tg"></div>
+<div class="card"><div style="color:var(--dim);font-size:13px;font-weight:600;letter-spacing:1px">PROTECTION LEVEL</div>
+<div class="score" id="sc">100%</div><div class="meter"><div id="mt"></div></div>
+<button class="btn" id="atk" style="width:100%">⚡ Launch Attack</button><div class="out" id="out">Layers enabled. Launch an attack to test your design.</div></div></div>
+</div></section>
+
+<section><div class="wrap">
+<div class="sh"><div class="n">06</div><h2>Activity — Name That Defense</h2></div>
+<p class="lead">Read each situation and choose the control that fits.</p><div id="act"></div>
+</div></section>
+
+<section><div class="wrap">
+<div class="sh"><div class="n">07</div><h2>Stop &amp; Think</h2></div>
+<div id="think"></div>
+<div class="card" style="margin-top:6px;border-left:4px solid var(--vio)"><b>Exam tip:</b> A design question needs structured thinking — identify the <b>assets</b>, then the <b>threats</b> (who might attack and how), then choose controls and justify them with Defense in Depth.</div>
+</div></section>
+
+<section><div class="wrap">
+<div class="sh"><div class="n">08</div><h2>Exam-Style Scenario</h2></div>
+<p class="lead">A school network has a public web server and an internal student database. Evaluate the design choices below.</p><div id="exam"></div>
+</div></section>
+
+<section><div class="wrap">
+<div class="sh"><div class="n">09</div><h2>Key Terms — Review Before the Test</h2></div><div class="gl" id="gl"></div>
+</div></section>
+
+<section><div class="wrap">
+<div class="sh"><div class="n">10</div><h2>Summary — Main Question Answered</h2></div>
+<div class="big"><ul class="sum"><li>An organization stays safe by using <b>multiple layers</b>: perimeter firewall + VPN for remote access + DMZ for public services + endpoint protection + continuous verification.</li>
+<li>The <b>firewall</b> filters traffic by rules; the <b>VPN</b> protects remote access; the <b>DMZ</b> isolates public services from the internal network.</li>
+<li><b>Zero Trust:</b> nothing is trusted automatically — verify every access, every time.</li></ul></div>
+</div></section>
+
+<section id="quiz"><div class="wrap">
+<div class="sh"><div class="n">11</div><h2>Test Yourself — Question Bank</h2></div>
+<p class="lead">15 multiple-choice questions. Pick an answer to see the explanation.</p>
+<div class="qtop"><span id="ql"></span><span id="qs"></span></div><div class="pg"><div id="pb"></div></div>
+<div class="mq" id="qc"></div>
+<div class="mq" id="res"><div class="score grad" id="fs"></div><h3 id="fm" style="margin:6px 0 18px"></h3><button class="btn" id="again">Try again</button></div>
+</div></section>
+
+<footer><div class="wrap">Programming &amp; Artificial Intelligence — Second Secondary<br><b>Mr. Ahmed Tamer · م/ أحمد تامر</b> · 01026309600</div></footer>
+</div>
+
+<script>
+const $=s=>document.getElementById(s),L='ABCD';
+/* gate */
+function go(){if($('gi').value.trim()==='546362'){$('gate').style.display='none';$('app').style.display='block'}else{$('ge').textContent='Wrong password — try again.';$('gi').classList.add('shake');setTimeout(()=>$('gi').classList.remove('shake'),400)}}
+$('gb2').onclick=go;$('gi').onkeydown=e=>{if(e.key==='Enter')go()};
+addEventListener('scroll',()=>{const h=document.documentElement;$('bar').style.width=(h.scrollTop/(h.scrollHeight-h.clientHeight)*100)+'%'});
+/* generic mcq block */
+function mcq(box,items,tag){items.forEach((m,i)=>{const d=document.createElement('div');d.className='mq';
+d.innerHTML=`<div class="tag">${tag} ${i+1}</div><div class="t">${m.q}</div><div class="os"></div><div class="fb">${m.e}</div>`;
+const os=d.querySelector('.os');m.o.forEach((o,j)=>{const b=document.createElement('button');b.className='o';b.innerHTML=`<u>${L[j]}</u><span>${o}</span>`;
+b.onclick=()=>{if(os.dataset.d)return;os.dataset.d=1;b.classList.add(j===m.a?'ok':'no');os.children[m.a].classList.add('ok');d.querySelector('.fb').classList.add('show')};os.appendChild(b)});box.appendChild(d)})}
+/* concepts */
+const C=[
+["🛡️","Firewall","A system or program that monitors network traffic and allows or blocks it according to defined security rules.","At the network boundary, between network parts, or on a single host.","Allow: outside users reaching the web server. Block: direct external access to the database server."],
+["🔐","VPN","Virtual Private Network — moves data safely across an untrusted public network (like the Internet) through an encrypted tunnel.","Between a remote device and the organization's network.","An employee working from a café connects as if sitting inside the company network."],
+["🧱","DMZ","Demilitarized Zone — an isolated part of the network hosting services that face the outside, kept apart from the internal network.","Between the Internet-facing firewall and the internal network.","A public web server sits in the DMZ; if it is hacked, the internal network and student database stay protected."],
+["💻","Endpoint","Protecting end-user devices (laptops, phones) with antivirus, firewalls and updates — because the device is often the first entry point.","On every user device that connects to the network.","Installing security updates and antivirus on staff laptops."],
+["🚫","Zero Trust","\"Never trust automatically\": verify every access — whether it comes from inside or outside the network.","Applied to every user, device and request.","A user already inside the office must still prove identity to open the finance system."],
+["🧅","Defense in Depth","Stacking multiple protection layers so that if one fails, another compensates.","Across the whole design: perimeter, network, device and access.","Firewall + VPN + DMZ + endpoint protection + Zero Trust working together."]];
+const tabs=$('tabs'),pane=$('pane');
+C.forEach((c,i)=>{const t=document.createElement('button');t.className='tab'+(i?'':' on');t.textContent=c[1];t.onclick=()=>{[...tabs.children].forEach(x=>x.classList.remove('on'));t.classList.add('on');show(i)};tabs.appendChild(t)});
+function show(i){const c=C[i];pane.className='card pane fade';void pane.offsetWidth;pane.innerHTML=`<div class="ic">${c[0]}</div><h3>${c[1]}</h3><div class="row"><div class="k">What</div><div class="v">${c[2]}</div></div><div class="row"><div class="k">Where</div><div class="v">${c[3]}</div></div><div class="row"><div class="k">Example</div><div class="v">${c[4]}</div></div>`}show(0);
+/* simulator */
+const S=[["Firewall","Filters traffic at the boundary",25],["VPN","Encrypts remote access",15],["DMZ","Isolates public services",20],["Endpoint protection","Secures user devices",20],["Zero Trust","Verifies every access",20]];
+const on=S.map(()=>true);let hit=-1;
+function draw(){const box=$('tg');box.innerHTML='';S.forEach((s,i)=>{const d=document.createElement('div');d.className='tg'+(on[i]?' on':'')+(hit===i?' hit':'');
+d.innerHTML=`<div class="sw"></div><div><b>${s[0]}</b><small>${s[1]}</small></div>`;d.onclick=()=>{on[i]=!on[i];hit=-1;draw()};box.appendChild(d)});
+const p=S.reduce((a,s,i)=>a+(on[i]?s[2]:0),0);$('sc').textContent=p+'%';const m=$('mt');m.style.width=p+'%';m.style.background=p>=75?'var(--ok)':p>=40?'var(--warn)':'var(--bad)'}
+$('atk').onclick=()=>{const act=S.map((s,i)=>i).filter(i=>on[i]);const o=$('out');
+if(!act.length){o.style.borderColor='var(--bad)';o.textContent='💥 No defenses enabled — the attacker walks straight to the database.';return}
+hit=act[Math.floor(Math.random()*act.length)];draw();const rest=act.filter(i=>i!==hit).map(i=>S[i][0]);
+if(rest.length>=2){o.style.borderColor='var(--ok)';o.innerHTML=`🛡️ The attacker broke through <b>${S[hit][0]}</b>, but was stopped by: <b>${rest.join(', ')}</b>. Defense in Depth worked.`}
+else if(rest.length===1){o.style.borderColor='var(--warn)';o.innerHTML=`⚠️ <b>${S[hit][0]}</b> was breached. Only <b>${rest[0]}</b> is left — too thin. Add more layers.`}
+else{o.style.borderColor='var(--bad)';o.innerHTML=`💥 <b>${S[hit][0]}</b> was your only defense. One breach = full compromise. That is a single point of failure.`}};
+draw();
+/* activity, think, exam */
+mcq($('act'),[
+{q:"Staff working from home must reach company files over the public Internet safely.",o:["DMZ","VPN","Antivirus only","Open Wi-Fi"],a:1,e:"A VPN builds an encrypted tunnel across the untrusted network."},
+{q:"A company wants its public website reachable, yet its internal network hidden from visitors.",o:["Put the web server in a DMZ","Put it inside the internal network","Disable the firewall","Share one admin password"],a:0,e:"A DMZ hosts outward-facing services away from the internal network."},
+{q:"A rule allows web traffic on port 443 but blocks all direct outside access to the database.",o:["Zero Trust","Endpoint protection","Firewall rules","VPN tunnel"],a:2,e:"Firewalls allow or block traffic according to defined security rules."},
+{q:"Even employees already inside the office must verify identity for every system they open.",o:["Defense in Depth","Zero Trust","DMZ","Encryption only"],a:1,e:"Zero Trust: verify every access, inside or outside."},
+{q:"Installing updates and antivirus on every student laptop is an example of:",o:["Endpoint protection","A DMZ","A VPN","A firewall rule"],a:0,e:"Devices are often the first entry point, so they need their own protection."}],"Scenario");
+mcq($('think'),[{q:"Why is ONE firewall at the network border not enough on its own?",o:["Firewalls are always slow","Threats can come from inside or via an infected device, and if it fails nothing else protects the network","Firewalls cannot block anything","Firewalls only work with a VPN"],a:1,e:"Threats can also come from inside or from a connected device — Defense in Depth covers these scenarios."}],"Think");
+mcq($('exam'),[
+{q:"Where is the safest place for the school's public web server?",o:["Inside the internal network next to the database","In the DMZ","On a student's laptop","Outside with no protection"],a:1,e:"If the DMZ server is compromised, the internal network and database remain protected."},
+{q:"Teachers log in from home to grade students. Which control protects this remote access?",o:["VPN","DMZ","Printer sharing","Disabling updates"],a:0,e:"A VPN encrypts the connection over the public Internet."},
+{q:"Which design best justifies the principle of Defense in Depth?",o:["One very expensive firewall","Firewall + DMZ + VPN + endpoint protection + Zero Trust verification","Strong passwords only","Hiding the Wi-Fi name"],a:1,e:"Multiple layers mean the failure of one is compensated by another."}],"Exam");
+/* glossary */
+[["Firewall","System or program that monitors network traffic and allows or blocks it per security rules."],["VPN","Encrypted tunnel that moves data safely across an untrusted public network."],["DMZ","Isolated part of the network hosting public-facing services away from the internal network."],["Defense in Depth","Stacking multiple protection layers so one failing is compensated by another."],["Zero Trust","Verifying every access without automatic trust for any party inside or outside the network."],["Endpoint","The end-user device such as a laptop or phone — often the attacker's first target."]].forEach(t=>{const d=document.createElement('div');d.className='gi';d.innerHTML=`<div class="gh">${t[0]}<span>+</span></div><div class="gbd">${t[1]}</div>`;d.firstChild.onclick=()=>{d.classList.toggle('open');d.querySelector('span').textContent=d.classList.contains('open')?'−':'+'};$('gl').appendChild(d)});
+/* quiz */
+const Q=[
+{q:"A system that monitors network traffic and allows or blocks it by security rules is a:",o:["VPN","DMZ","Firewall","Digital signature"],a:2,e:"That is the definition of a firewall."},
+{q:"The main purpose of a DMZ is to:",o:["Speed up the Internet","Host public-facing services isolated from the internal network","Encrypt passwords","Block junk mail"],a:1,e:"A DMZ keeps outward-facing services away from the internal network."},
+{q:"Which technology moves data securely across a public network through an encrypted tunnel?",o:["VPN","HTTP","DMZ","2FA"],a:0,e:"VPN = Virtual Private Network."},
+{q:"“Verify every access; trust nothing automatically” describes:",o:["Defense in Depth","Mutual encryption","Zero Trust","Firewall"],a:2,e:"Zero Trust verifies every access, inside or outside."},
+{q:"Using several protection layers so one failure is compensated by another is called:",o:["Defense in Depth","Single sign-on","Zero Trust","Port forwarding"],a:0,e:"Layering controls is Defense in Depth."},
+{q:"Why is endpoint protection important?",o:["Devices are often the first entry point for attackers","It replaces the firewall","It speeds up the VPN","It hides the DMZ"],a:0,e:"A compromised device can give attackers a way into the network."},
+{q:"An employee on café Wi-Fi needs the company network. Best choice:",o:["Share the admin password","Use a VPN","Disable the firewall","Use a USB drive"],a:1,e:"The VPN encrypts the connection over the untrusted network."},
+{q:"A firewall rule blocks direct outside access to the database server. This shows a firewall can:",o:["Allow everything","Block traffic by defined rules","Encrypt files","Create backups"],a:1,e:"Rules decide which connections are allowed or blocked."},
+{q:"Relying on a single firewall is risky because:",o:["Firewalls are expensive","If it fails or is bypassed, nothing else protects the network","Firewalls delete data","Firewalls need no rules"],a:1,e:"That is a single point of failure."},
+{q:"Under Zero Trust, a user already inside the office network is:",o:["Trusted automatically","Verified for each access","Blocked forever","Moved to the DMZ"],a:1,e:"Location inside the network does not grant trust."},
+{q:"Which is NOT a layer of good network defense?",o:["Firewall","Endpoint protection","All staff sharing one password","VPN for remote access"],a:2,e:"Shared passwords weaken security rather than adding a layer."},
+{q:"If a web server in the DMZ is hacked, the internal network stays safer because:",o:["The DMZ is isolated from it","The web server is faster","The attacker gets tired","VPN is switched off"],a:0,e:"Isolation limits how far the attacker can go."},
+{q:"A sound security design evaluation starts by:",o:["Buying equipment","Identifying assets, then threats, then choosing controls","Choosing the cheapest option","Turning off logging"],a:1,e:"Define assets and threats first, then justify controls."},
+{q:"Where does an organization's public web server belong?",o:["DMZ","Inside next to the database","On the CEO's laptop","Nowhere secure"],a:0,e:"Public services belong in the DMZ."},
+{q:"True or false: one strong defense is enough to protect a network.",o:["True","False"],a:1,e:"False — layered defense is stronger because one defense can fail."}];
+let qi=0,sc=0,an=[];
+function rq(){const q=Q[qi];$('ql').textContent=`Question ${qi+1} of ${Q.length}`;$('qs').textContent=`Correct: ${sc}`;$('pb').style.width=(qi/Q.length*100)+'%';
+$('qc').style.display='block';$('res').style.display='none';
+$('qc').innerHTML=`<div class="t" style="font-size:17px">${q.q}</div><div class="os"></div><div class="fb">${q.e}</div><div class="qn"><button class="btn ghost" id="pv" ${qi?'':'disabled'}>Previous</button><button class="btn" id="nx" disabled>${qi===Q.length-1?'Finish':'Next'}</button></div>`;
+const os=$('qc').querySelector('.os');q.o.forEach((o,j)=>{const b=document.createElement('button');b.className='o';b.innerHTML=`<u>${L[j]}</u><span>${o}</span>`;
+b.onclick=()=>{if(an[qi]!==undefined)return;an[qi]=j;if(j===q.a)sc++;pick(q,os,j)};os.appendChild(b)});
+if(an[qi]!==undefined)pick(q,os,an[qi],1);
+$('pv').onclick=()=>{qi--;rq()};$('nx').onclick=()=>{if(qi===Q.length-1)fin();else{qi++;rq()}}}
+function pick(q,os,j){os.children[j].classList.add(j===q.a?'ok':'no');os.children[q.a].classList.add('ok');$('qc').querySelector('.fb').classList.add('show');$('nx').disabled=false;$('qs').textContent=`Correct: ${sc}`}
+function fin(){$('qc').style.display='none';$('res').style.display='block';$('pb').style.width='100%';$('fs').textContent=`${sc} / ${Q.length}`;
+$('fm').textContent=sc>=13?'Outstanding — you think like a security architect!':sc>=9?'Good work — review the key terms and retry.':'Keep going — re-read the building blocks and try again.'}
+$('again').onclick=()=>{qi=0;sc=0;an=[];rq()};rq();
+</script>
+</body>
+</html>
